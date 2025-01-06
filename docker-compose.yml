@@ -1,0 +1,145 @@
+version: '3.8'
+services:
+    flowkit-flowise:
+        container_name: flowkit-flowise
+        image: flowiseai/flowise
+        restart: always
+        environment:
+            - PORT=${PORT}
+            # - CORS_ORIGINS=${CORS_ORIGINS}
+            # - IFRAME_ORIGINS=${IFRAME_ORIGINS}
+            # - FLOWISE_USERNAME=${FLOWISE_USERNAME}
+            # - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
+            # - FLOWISE_FILE_SIZE_LIMIT=${FLOWISE_FILE_SIZE_LIMIT}
+            # - DEBUG=${DEBUG}
+            # - DATABASE_PATH=${DATABASE_PATH}
+            # - DATABASE_TYPE=${DATABASE_TYPE}
+            # - DATABASE_PORT=${DATABASE_PORT}
+            # - DATABASE_HOST=${DATABASE_HOST}
+            # - DATABASE_NAME=${DATABASE_NAME}
+            # - DATABASE_USER=${DATABASE_USER}
+            # - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+            # - DATABASE_SSL=${DATABASE_SSL}
+            # - DATABASE_SSL_KEY_BASE64=${DATABASE_SSL_KEY_BASE64}
+            - APIKEY_PATH=${APIKEY_PATH}
+            - SECRETKEY_PATH=${SECRETKEY_PATH}
+            # - FLOWISE_SECRETKEY_OVERWRITE=${FLOWISE_SECRETKEY_OVERWRITE}
+            # - LOG_LEVEL=${LOG_LEVEL}
+            - LOG_PATH=${LOG_PATH}
+            - BLOB_STORAGE_PATH=${BLOB_STORAGE_PATH}
+            # - DISABLE_FLOWISE_TELEMETRY=${DISABLE_FLOWISE_TELEMETRY}
+            # - MODEL_LIST_CONFIG_JSON=${MODEL_LIST_CONFIG_JSON}
+            - MEM_LIMIT=${FLOWISE_MEM_LIMIT}
+        ports:
+            - '${PORT}:${PORT}'
+        volumes:
+            - ~/.flowise:/root/.flowise
+        entrypoint: /bin/sh -c "sleep 3; flowise start"
+        networks:
+            - flowkit-docker
+
+    flowkit-ollama:
+        image: ollama/ollama:latest
+        ports:
+            - 11444:11434
+        volumes:
+            - .:/code
+            - ./ollama/ollama:/root/.ollama
+        container_name: flowkit-ollama
+        pull_policy: always
+        tty: true
+        restart: always
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                      - driver: nvidia
+                        count: 1
+                        capabilities: [gpu]
+        environment:
+            - OLLAMA_KEEP_ALIVE=24h
+            - OLLAMA_HOST=0.0.0.0
+        networks:
+            - flowkit-docker
+
+    flowkit-webui:
+        image: ghcr.io/open-webui/open-webui:main
+        container_name: flowkit-webui
+        volumes:
+            - ./ollama/flowkit-webui:/app/backend/data
+        depends_on:
+            - flowkit-ollama
+        ports:
+            - 8080:8080
+        environment: # https://docs.openwebui.com/getting-started/env-configuration#default_models
+            - OLLAMA_BASE_URLS=http://host.docker.internal:11444 #comma separated ollama hosts
+            - ENV=dev
+            - WEBUI_AUTH=False
+            - WEBUI_NAME=valiantlynx AI
+            - WEBUI_URL=http://localhost:8080
+            - WEBUI_SECRET_KEY=t0p-s3cr3t
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        restart: unless-stopped
+        networks:
+            - flowkit-docker
+
+    flowkit-langflow:
+        image: langflowai/langflow:latest
+        container_name: flowkit-langflow
+        ports:
+            - "7860:7860"
+        volumes:
+            - langflow_data:/data
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        restart: unless-stopped
+        networks:
+            - flowkit-docker
+
+    flowkit-postgres:
+        image: postgres:16-alpine
+        container_name: flowkit-postgress
+        hostname: flowkit-db
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        volumes:
+            - ./flowkit-db:/var/lib/postgresql/data:rw
+        environment:
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        restart: always
+        ports:
+            - ${DATABASE_PORT}:5432
+        networks:
+            - flowkit-docker
+
+    flowkit-mongodb:
+        container_name: flowkit-mongodb
+        restart: always
+        image: mongo
+        environment:
+            - AUTH=false
+        ports:
+            - "27017:27017"
+        volumes:
+            - mongodb_data:/data/db
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        networks:
+            - flowkit-docker
+
+volumes:
+  postgres_data: {}
+  flowkit_data: {}
+  mongodb_data: {}
+  langflow_data: {}
+
+networks:
+    flowkit-docker:
+        driver: bridge
+  

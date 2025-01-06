@@ -1,0 +1,16 @@
+{
+  "name": "flowise",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx flowise start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "flowise": "^2.1.4",
+    "puppeteer": "^22.15.0"
+  }
+}
