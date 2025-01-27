@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  yolo-gpu:
+    image: tensorflow/tensorflow:latest-gpu  # Imagem com suporte a GPU
+    container_name: yolo-container
+    ports:
+      - "8888:8888"  # Porta para Jupyter Notebook (opcional)
+    volumes:
+      - yolo_data:/app  # Monta o diretório atual no container
+    working_dir: /app  # Define o diretório de trabalho
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all  # Expõe todas as GPUs disponíveis
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]  # Aloca uma GPU
+    command: bash -c "pip install -r ./requirements.txt && jupyter notebook --ip=0.0.0.0 --allow-root --no-browser"
+
+volumes:
+  yolo_data: {}
