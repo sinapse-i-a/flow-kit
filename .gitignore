@@ -2,3 +2,5 @@
 package-lock.json
 flowkit-db/*
 ollama/*
+computer-vision/venv/*
+computer-vision/app/output/*

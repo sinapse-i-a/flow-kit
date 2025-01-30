@@ -1,0 +1,18 @@
+version: '3.9'
+services:
+  yolo-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./app:/usr/src/app
+    stdin_open: true
+    tty: true
