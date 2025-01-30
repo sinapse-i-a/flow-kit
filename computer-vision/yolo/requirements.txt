@@ -1,0 +1,9 @@
+opencv-python
+opencv-python-headless
+numpy
+torch
+torchvision
+torchaudio
+matplotlib
+tqdm
+scipy
