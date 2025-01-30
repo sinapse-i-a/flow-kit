@@ -4,3 +4,6 @@ flowkit-db/*
 ollama/*
 computer-vision/venv/*
 computer-vision/app/output/*
+
+#Remove all the files of the YOLO model
+computer-vision/app/yolo*
